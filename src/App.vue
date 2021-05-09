@@ -1,23 +1,28 @@
 <template>
   <div id="app">
-    <div class=combination-area>
-      <ingredient :ingredient="firstPick" :pickable="false"/>
-      <ingredient :ingredient="secondPick" :pickable="false"/>
-      <div>=</div>
+    <div class="header">
+      <div class=combination-area>
+        <ingredient :ingredient="firstPick" :pickable="false"/>
+        <ingredient :ingredient="secondPick" :pickable="false"/>
+        <div>=</div>
+        <ingredient 
+          :ingredient="currentResult"
+          @pickFirst="firstPick=currentResult"
+          @pickSecond="secondPick=currentResult"
+          />
+      </div>
+      <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
+      <p>Discovered {{numDiscovered}} / {{ingredients.length}}</p>
+    </div>
+    <div class="ingredients-list">
       <ingredient 
-        :ingredient="currentResult"
-        @pickFirst="firstPick=currentResult"
-        @pickSecond="secondPick=currentResult"
+        v-for="ingredient in ingredients" 
+        :ingredient="ingredient" 
+        :key="ingredient.name"
+        @pickFirst="firstPick=ingredient"
+        @pickSecond="secondPick=ingredient"
         />
     </div>
-    <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
-    <ingredient 
-      v-for="ingredient in ingredients" 
-      :ingredient="ingredient" 
-      :key="ingredient.name"
-      @pickFirst="firstPick=ingredient"
-      @pickSecond="secondPick=ingredient"
-      />
   </div>
 </template>
 
@@ -25,12 +30,22 @@
 import Ingredient from './components/Ingredient.vue';
 
 /**
+ * @typedef {object} IngredientOptions
+ * @property {boolean} discovered If this ingredient is discovered
+ */
+
+/**
  * Creates an ingredient object with appropriate structure.
  * @param {string} name the name of the ingredient
+ * @param {IngredientOptions} options the optional features of this ingredient
  */
-function createIngredient(name){
+function createIngredient(name, options){
   return {
-    name: name
+    ...{ // Defaults
+      discovered: false
+    },
+    ...options,
+    name
   }
 }
 const staticValues = {
@@ -44,22 +59,18 @@ const staticValues = {
    */
   combinations:{
     'Air':{
-      'Air': 'Air',
-      'Earth': 'Air',
-      'Fire': 'Air',
-      'Water': 'Air'
+      'Earth': 'Dust',
+      'Fire': 'Fire',
+      'Water': 'Cloud'
     },
     'Earth':{
-      'Earth': 'Earth',
       'Fire': 'Earth',
-      'Water': 'Earth'
+      'Water': 'Mud'
     },
     'Fire':{
-      'Fire': 'Fire',
-      'Water': 'Fire'
+      'Water': 'Steam'
     },
     'Water':{
-      'Water': 'Water'
     }
   }
 }
@@ -74,10 +85,17 @@ export default {
       staticValues,
       // A list of the known ingredients. Must be ingredients objects
       ingredients: [
-        createIngredient("Air"),
-        createIngredient("Earth"),
-        createIngredient("Fire"),
-        createIngredient("Water"),
+        // The basic four elements
+        createIngredient("Air", {discovered: true}),
+        createIngredient("Earth", {discovered: true}),
+        createIngredient("Fire", {discovered: true}),
+        createIngredient("Water", {discovered: true}),
+
+        // The combinations of the basic elements
+        createIngredient("Dust"),
+        createIngredient("Cloud"),
+        createIngredient("Mud"),
+        createIngredient("Steam"),
       ],
       firstPick: staticValues.blankIngredient,
       secondPick: staticValues.blankIngredient,
@@ -89,7 +107,40 @@ export default {
       ? [this.firstPick.name, this.secondPick.name] 
       : [this.secondPick.name, this.firstPick.name];
 
-      return this.findIngredientByName(this.staticValues.combinations?.[first]?.[second]) ?? this.staticValues.blankIngredient;
+      // Find a specific result's name if there is one
+      let resultName = this.staticValues.combinations?.[first]?.[second];
+
+        // If no specifically named result is provided, perform some basic heuristics
+      if(resultName === undefined){
+        // A + _ == _ + A == _
+        if(first === this.staticValues.blankIngredient.name || second === this.staticValues.blankIngredient.name) return this.staticValues.blankIngredient;
+
+        // A + A = A
+        if(first === second) resultName = first;
+      }
+
+      // If there still is no result name, just return the blank ingredient
+      if(resultName === undefined) return this.staticValues.blankIngredient;
+
+      let ingredient = this.findIngredientByName(resultName);
+
+      // If this ingredient cannot be found by name, warn the developer and just return the blank ingredient
+      if(ingredient === null){
+        console.error(`Ingredient ${resultName} was not found in the list of ingredients`);
+        return this.staticValues.blankIngredient
+      }
+
+      // Ensure this ingredient is marked as discovered
+      ingredient.discovered = true;
+
+
+      return  ingredient;
+    },
+    /**
+     * The number of ingredients that have been discovered
+     */
+    numDiscovered(){
+      return this.ingredients.reduce((accumulator, ingredient)=>accumulator + (ingredient.discovered ? 1 : 0), 0)
     }
   },
   methods:{
@@ -114,6 +165,18 @@ export default {
   display: flex;
   align-items: center;
   gap: 1em;
+}
+.header{
+  position: sticky;
+  top: 0;
+  background: white;
+  border-bottom: 1px solid black;
+  margin-bottom: 0.5em;
+}
+
+.ingredients-list{
+  display: flex;
+  flex-wrap: wrap;
 }
 </style>
 

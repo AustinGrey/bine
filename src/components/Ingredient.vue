@@ -1,7 +1,7 @@
 <template>
   <div :class="$options.name">
-      <p>{{ingredient.name}}</p>
-      <div class="buttons" v-if="pickable">
+      <p>{{ingredient.discovered ? ingredient.name : "?"}}</p>
+      <div class="buttons" v-if="pickable && ingredient.discovered">
         <button class="pickFirst" type='button' @click="$emit('pickFirst')">L</button>
         <button class="pickSecond" type='button' @click="$emit('pickSecond')">R</button>
       </div>
