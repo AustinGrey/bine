@@ -1,21 +1,31 @@
 <template>
   <div :class="$options.name">
-      <p>{{name}}</p>
+      <p>{{ingredient.name}}</p>
   </div>
 </template>
 
 <script>
-import { ref } from '@vue/composition-api';
+//import { ref } from '@vue/composition-api';
 
 export default {
   name: 'ingredient',
+  props:{
+    ingredient: Object
+  },
   setup(){
-      const name = ref("My Element");
-
-      return { name: name }
   }
 }
 </script>
 
-<style>
+<style lang="scss">
+.ingredient{
+  border: 1px solid black;
+  border-radius: 4px;
+  width: 5em;
+  height: 5em;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 </style>
