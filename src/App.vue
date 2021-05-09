@@ -1,18 +1,22 @@
 <template>
   <div id="app">
     <div class=combination-area>
-      <ingredient :ingredient="firstPick"/>
-      <ingredient :ingredient="secondPick"/>
+      <ingredient :ingredient="firstPick" :pickable="false"/>
+      <ingredient :ingredient="secondPick" :pickable="false"/>
       <div>=</div>
-      <ingredient :ingredient="staticValues.blankIngredient"/>
+      <ingredient 
+        :ingredient="currentResult"
+        @pickFirst="firstPick=currentResult"
+        @pickSecond="secondPick=currentResult"
+        />
     </div>
     <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
     <ingredient 
       v-for="ingredient in ingredients" 
       :ingredient="ingredient" 
       :key="ingredient.name"
-      @click.native.left="firstPick=ingredient"
-      @click.native.right.prevent="secondPick=ingredient"
+      @pickFirst="firstPick=ingredient"
+      @pickSecond="secondPick=ingredient"
       />
   </div>
 </template>
@@ -33,9 +37,7 @@ const staticValues = {
   /**
    * The blank ingredient, used for an unknown or empty ingredient space
    */
-  blankIngredient: {
-    name: "?"
-  },
+  blankIngredient: createIngredient('?'),
   /**
    * Defines which combinations have what outputs, by ingredient id.
    * Combinations are commutative, so they are stored by key of first element by alphabetical sorting, and then by the second element
@@ -83,10 +85,25 @@ export default {
   },
   computed:{
     currentResult(){
-      let [first, second] = this.firstPick.name.localeCompare(this.secondPick.name) 
+      let [first, second] = this.firstPick.name.localeCompare(this.secondPick.name) < 0
       ? [this.firstPick.name, this.secondPick.name] 
       : [this.secondPick.name, this.firstPick.name];
-      return this.ingredients[this.combinations[first][second]];
+
+      return this.findIngredientByName(this.staticValues.combinations?.[first]?.[second]) ?? this.staticValues.blankIngredient;
+    }
+  },
+  methods:{
+    /**
+     * Finds an ingredient given it's name. Returns null if no ingredient is found with that name
+     * @param {string} name The name of the ingredient to find
+     */
+    findIngredientByName(name){
+      for(let ingredient of this.ingredients){
+        if(ingredient.name === name){
+          return ingredient
+        }
+      }
+      return null;
     }
   }
 }
@@ -97,5 +114,16 @@ export default {
   display: flex;
   align-items: center;
   gap: 1em;
+}
+</style>
+
+<style lang="scss">
+// Reset css
+button{
+  font-size: 1rem;
+  border-radius: 0;
+  border: 1px solid black;
+  background: none;
+  margin: 0;
 }
 </style>
